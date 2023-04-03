@@ -1,5 +1,5 @@
 
-""" pyModbusTCP Client with additional methods read_holding_raw and read_input_raw
+""" pyModbusTCP Client with two additional methods "read_holding_raw" and "read_input_raw"
     based on https://github.com/sourceperl/pyModbusTCP from l.lefebvre
 """
 import struct

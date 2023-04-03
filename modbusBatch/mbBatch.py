@@ -15,8 +15,6 @@ modbusBatch - batch modbus requests.
 import csv
 import time
 import dataclasses
-
-import mbInverter
 from modbusBatch.mbUtils import int_with_default, float_with_default, u16, u32be, u32le, s16, s32be, s32le, regs_to_str
 from modbusBatch.modbusTcpRaw import ModbusTcpRaw
 import logging
@@ -44,14 +42,14 @@ class MbBatch(object):
         scaling_factor: int | float
         reserved: str = None
         round: int = 1
-        # private
+        # private:
         _field_decoder: object = None  # points to conversion function (binary to int etc.)
 
         @property
         def field_decoder(self):
             return self._field_decoder
 
-        def shortinfo(self) -> str:
+        def __repr__(self) -> str:
             return f'{self.reg_name}: {self.reg_type} {self.reg_number} {self.data_type}  {self.data_length} ' + \
                    f'{self.scaling_factor} '
 
@@ -81,36 +79,44 @@ class MbBatch(object):
         self._inv_options = inv_options
         self._callInverter = None
         self._csv_header = None
-        # public
-        self.mbregs: [MbBatch.MbReg] = list()
-        self.mbrequests: [MbBatch.MbRequest] = list()
-        self.results: dict = {}
-        self.client = None
+        # public, read only:
+        self._mbregs: [MbBatch.MbReg] = list()
+        self._mbrequests: [MbBatch.MbRequest] = list()
+        self._results: dict = {}
+        self._client = None
 
-        """
-        Is there a special function named <inv_model>?
-        """
-        if callable(getattr(mbInverter, self._inv_model)):
-            mbInverter.afterModbusComplete = getattr(mbInverter, self._inv_model)
-        else:
-            mbInverter.afterModbusComplete = mbInverter.doNothing
-
-        """ define ModbusTCP connection (raw version) """
+        """ setup ModbusTCP connection (raw version) """
         try:
-            self.client = ModbusTcpRaw( host=self._host,
-                                        port=self._port,
-                                        unit_id=0,
-                                        auto_open=False,
-                                        auto_close=False )
+            self._client = ModbusTcpRaw( host=self._host,
+                                         port=self._port,
+                                         unit_id=0,
+                                         auto_open=False,
+                                         auto_close=False )
         except Exception as e:
             log.error( "Error with host or port params", e )
             exit( 13 )
 
         if self._file_type.lower() == "csv":
             self._reg_CSV()
-            self.build_batches()
+            self._build_batches()
 
         # to be done: json, yaml
+
+    @property
+    def client(self):
+        return self._client
+
+    @property
+    def results(self):
+        return self._results
+
+    @property
+    def mbregs(self):
+        return self._mbregs
+
+    @property
+    def mbrequests(self):
+        return self._mbrequests
 
     def _reg_CSV(self):
         """
@@ -171,7 +177,7 @@ class MbBatch(object):
         def _filter(_csv_record) -> bool:
             """
              Lines starting with "#" will be treated as comments and ignored
-             First non-comment-line will is csv-header which should contain following fields:
+             First non-comment-line is csv-header which should contain following fields:
              reg_type, reg_number, reg_name, reg_desc, measurement_unit, data_type, data_length, unit_id,
                                                                                                 scaling_factor
             """
@@ -184,13 +190,13 @@ class MbBatch(object):
 
         try:
             f = open(self._file_path)
-            self.mbregs = sorted(list(map(_CSV_to_MbReg, filter( _filter, csv.reader( f ) ) )),
-                                 key=lambda a: '%3.3i %s1.1 %5.5i' % (a.unit_id, a.reg_type, a.reg_number) )
+            self._mbregs = sorted( list( map( _CSV_to_MbReg, filter( _filter, csv.reader( f ) ) ) ),
+                                   key=lambda a: '%3.3i %s1.1 %5.5i' % (a.unit_id, a.reg_type, a.reg_number) )
         except BaseException as e:
             log.error(f"Murks in {__name__}, : {e}" )
             exit(12)
 
-    def build_batches(self):
+    def _build_batches(self):
         """
         Make batches up to 120 registers for modbus access.
         Reading single registers via modbusTCP is possible but inefficient,
@@ -198,7 +204,7 @@ class MbBatch(object):
         which is the limit for TCP connections.
         """
         mbrequest = None
-        for i, reg in enumerate(self.mbregs):
+        for i, reg in enumerate( self._mbregs ):
             if i == 0:
                 mbrequest = MbBatch.MbRequest( unit_id=reg.unit_id,
                                                address=reg.reg_number - self._reg_offset,
@@ -209,7 +215,7 @@ class MbBatch(object):
             elif reg.data_length + reg.reg_number - self._reg_offset - mbrequest.address > 120 or \
                     mbrequest.reg_type != reg.reg_type or \
                     mbrequest.unit_id != reg.unit_id:
-                self.mbrequests.append(mbrequest)
+                self._mbrequests.append( mbrequest )
                 mbrequest = MbBatch.MbRequest( unit_id=reg.unit_id,
                                                address=reg.reg_number - self._reg_offset,
                                                quantity=reg.data_length,
@@ -220,38 +226,38 @@ class MbBatch(object):
                 mbrequest.quantity = reg.data_length + reg.reg_number - self._reg_offset - mbrequest.address
                 mbrequest.to_x = i
 
-        self.mbrequests.append(mbrequest)
+        self._mbrequests.append( mbrequest )
 
-    def process_batches(self) -> bool:
+    def process_batches(self, close_socket: bool = True) -> bool:
         """
-        Retrieve all registers from modbus server in one single composed request and store results
-        in dict results
+        Retrieve all registers from modbus server in one single composed request, convert modbus payload
+        to python datatypes (int, float, string) and return _results as dict
         """
         _retry = self._retry
-        while _retry and self.client:
-            self.client.open()
+        while _retry and self._client:
+            self._client.open()
             rc = True
-            for b in self.mbrequests:
+            for b in self._mbrequests:
                 rc = True
-                self.client.unit_id = b.unit_id
+                self._client.unit_id = b.unit_id
                 if b.reg_type == "h":
-                    raw_values = self.client.read_holding_raw( reg_addr=b.address, reg_nb=b.quantity )
+                    raw_values = self._client.read_holding_raw( reg_addr=b.address, reg_nb=b.quantity )
                 else:
-                    raw_values = self.client.read_input_raw( reg_addr=b.address, reg_nb=b.quantity )
+                    raw_values = self._client.read_input_raw( reg_addr=b.address, reg_nb=b.quantity )
                 if raw_values is None:
-                    log.error(f"invalid modbus result for batch ", b, f" retry {_retry} " )
+                    log.warning(f"invalid modbus result for batch ", b, f" retry {_retry} " )
                     rc = False
                     break
-                for mbreg in self.mbregs[b.from_x:b.to_x + 1]:
+                for mbreg in self._mbregs[b.from_x:b.to_x + 1]:
                     x = (mbreg.reg_number - b.address - self._reg_offset) * 2
                     y = x + mbreg.data_length * 2
-                    self.results[mbreg.reg_name] = mbreg.field_decoder( raw_values[x:y], mbreg.scaling_factor,
-                                                                        mbreg.round)
-            self.client.close()
+                    self._results[mbreg.reg_name] = mbreg.field_decoder( raw_values[x:y], mbreg.scaling_factor,
+                                                                         mbreg.round )
+            close_socket and self._client.close()
             if rc:
-                mbInverter.afterModbusComplete(self.results, self._inv_options)
                 return rc
             else:
                 time.sleep(0.3)
 
+        log.error( f"{__name__} failed {_retry} times - I give up" )
         return False
