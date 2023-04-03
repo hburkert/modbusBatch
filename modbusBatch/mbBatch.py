@@ -66,7 +66,7 @@ class MbBatch(object):
     MbRegs = [MbReg]
 
     def __init__(self, host="localhost", port=502, retry=3, reg_offset=0, reg_wordswap=True,
-                 file_type="csv", file_path="registers.csv", inv_model=".foo.bar", inv_options=None):
+                 file_type="csv", file_path="registers.csv"):
         # private
         self._host = host
         self._port = port
@@ -75,9 +75,6 @@ class MbBatch(object):
         self._reg_wordswap = reg_wordswap
         self._file_type = file_type
         self._file_path = file_path
-        self._inv_model = inv_model
-        self._inv_options = inv_options
-        self._callInverter = None
         self._csv_header = None
         # public, read only:
         self._mbregs: [MbBatch.MbReg] = list()
@@ -99,8 +96,6 @@ class MbBatch(object):
         if self._file_type.lower() == "csv":
             self._reg_CSV()
             self._build_batches()
-
-        # to be done: json, yaml
 
     @property
     def client(self):

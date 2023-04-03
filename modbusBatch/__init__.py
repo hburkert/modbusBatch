@@ -1,5 +1,5 @@
 """
-    ModbusBatch: ModbusTCP layer for batched modbus requests.
+    ModbusBatch: ModbusTCP layer for high-speed batched modbus requests.
     Reads register definitions from CSV-Input (YAML, JSON to be done).
     Bulks modbus requests to bunches of up to 120 registers for optimized access
     which are handled in one transaction.
