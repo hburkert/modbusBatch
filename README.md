@@ -14,22 +14,23 @@ ModbusTCP layer for high-speed batched modbus requests.
 ## Intended Use
 Cyclic polling of (many) inverter modbus registers via TCP.
 
-### Installation
+## Installation
 ```bash
 sudo pip install git+https://github.com/hburkert/modbusBatch.git
 ```
 
-### Synopsis
+## Synopsis
 ```python
 import time
 from modbusBatch.mbBatch import MbBatch
 mb = MbBatch(host="localhost",
-    port=508,
-    retry=3,
-    reg_offset=1,
-    reg_wordswap=True,
-    file_type="csv",
-    file_path="./SungrowSHxxRT.csv")
+             port=502,
+             retry=3,
+             reg_offset=1,
+             reg_wordswap=True,
+             file_type="csv",
+             file_path="./SungrowSHxxRT.csv",
+             debug=False)
 
 # endless application loop
 while mb.process_batches(close_socket=True):
@@ -67,5 +68,6 @@ where:
 - reg_wordswap - True/False. True means U32/S32 register pairs are little endian encoded (Sungrow, SolaX, ...)
 - file_type - only "csv" is supported
 - file_path - file with register definitions 
+- debug - debug flag for modbusTcpRaw 
 
 ##### Class members

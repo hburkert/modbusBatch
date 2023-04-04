@@ -66,7 +66,7 @@ class MbBatch(object):
     MbRegs = [MbReg]
 
     def __init__(self, host="localhost", port=502, retry=3, reg_offset=0, reg_wordswap=True,
-                 file_type="csv", file_path="registers.csv"):
+                 file_type="csv", file_path="registers.csv", debug=False):
         # private
         self._host = host
         self._port = port
@@ -81,6 +81,7 @@ class MbBatch(object):
         self._mbrequests: [MbBatch.MbRequest] = list()
         self._results: dict = {}
         self._client = None
+        self._debug = debug
 
         """ setup ModbusTCP connection (raw version) """
         try:
@@ -88,7 +89,8 @@ class MbBatch(object):
                                          port=self._port,
                                          unit_id=0,
                                          auto_open=False,
-                                         auto_close=False )
+                                         auto_close=False,
+                                         debug=self._debug)
         except Exception as e:
             log.error( "Error with host or port params", e )
             exit( 13 )
@@ -228,7 +230,11 @@ class MbBatch(object):
         """
         _retry = self._retry
         while _retry and self._client:
+            _retry -= 1
             self._client.open()
+            if self._client.last_error or self._client.last_except:
+                print(self._client.last_error_as_txt, self._client.last_except_as_full_txt)
+                continue
             rc = True
             for b in self._mbrequests:
                 rc = True
@@ -238,7 +244,8 @@ class MbBatch(object):
                 else:
                     raw_values = self._client.read_input_raw( reg_addr=b.address, reg_nb=b.quantity )
                 if raw_values is None:
-                    log.warning(f"invalid modbus result for batch ", b, f" retry {_retry} " )
+                    log.warning(f"invalid modbus result for batch {b}  retry {_retry} " )
+                    print( self._client.last_error_as_txt, self._client.last_except_as_full_txt )
                     rc = False
                     break
                 for mbreg in self._mbregs[b.from_x:b.to_x + 1]:
@@ -252,5 +259,5 @@ class MbBatch(object):
             else:
                 time.sleep(0.3)
 
-        log.error( f"{__name__} failed {_retry} times - I give up" )
+        log.error( f"{__name__} failed {self._retry} times - I give up" )
         return False

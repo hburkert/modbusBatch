@@ -30,7 +30,7 @@
         import time
         from modbusBatch.mbBatch import MbBatch
         mb = MbBatch(host="localhost",
-             port=508,
+             port=502,
              retry=3,
              reg_offset=1,
              reg_wordswap=True,
