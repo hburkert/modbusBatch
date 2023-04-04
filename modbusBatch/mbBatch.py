@@ -145,26 +145,25 @@ class MbBatch(object):
             d['measurement_unit'] = d['measurement_unit'].lower()
             d['data_type'] = d['data_type'].lower()
             d['data_length'] = int_with_default( d['data_length'], 1 )
-            match d['data_type']:
-                case 'chr':
-                    d['data_length'] = max( 1, d["data_length"] )
-                    d['_field_decoder'] = regs_to_str
-                case 'str':
-                    d['data_length'] = max( 1, d['data_length'] )
-                    d['_field_decoder'] = regs_to_str
-                case 'u32':
-                    d['data_length'] = 2
-                    d['_field_decoder'] = u32le if self._reg_wordswap else u32be
-                case 's32':
-                    d['data_length'] = 2
-                    d['_field_decoder'] = s32le if self._reg_wordswap else s32be
-                case 's16':
-                    d['data_length'] = 1
-                    d['_field_decoder'] = s16
-                case _:
-                    d['data_type'] = 'u16'
-                    d['data_length'] = 1
-                    d['_field_decoder'] = u16
+            if d['data_type'] == 'chr':
+                d['data_length'] = max( 1, d["data_length"] )
+                d['_field_decoder'] = regs_to_str
+            elif d['data_type'] == 'str':
+                d['data_length'] = max( 1, d['data_length'] )
+                d['_field_decoder'] = regs_to_str
+            elif d['data_type'] == 'u32':
+                d['data_length'] = 2
+                d['_field_decoder'] = u32le if self._reg_wordswap else u32be
+            elif d['data_type'] == 's32':
+                d['data_length'] = 2
+                d['_field_decoder'] = s32le if self._reg_wordswap else s32be
+            elif d['data_type'] == 's16':
+                d['data_length'] = 1
+                d['_field_decoder'] = s16
+            else:
+                d['data_type'] = 'u16'
+                d['data_length'] = 1
+                d['_field_decoder'] = u16
             # make MbReg from dict:
             r = MbBatch.MbReg( **d )
             return r
@@ -173,8 +172,7 @@ class MbBatch(object):
             """
              Lines starting with "#" will be treated as comments and ignored
              First non-comment-line is csv-header which should contain following fields:
-             reg_type, reg_number, reg_name, reg_desc, measurement_unit, data_type, data_length, unit_id,
-                                                                                                scaling_factor
+             reg_type, reg_number, reg_name, reg_desc, measurement_unit, data_type, data_length, unit_id, scaling_factor
             """
             if _csv_record[0][0] == '#' or len(_csv_record) < 3:
                 return False

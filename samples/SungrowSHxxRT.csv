@@ -1,0 +1,247 @@
+# <- this is a comment line
+# First non-comment must be csv.header
+#
+# CSV style register definitions as defined in Sungrow
+# Communication Protocol of Residential Hybrid Inverter V1.0.20
+# and stolen from many different resources.
+#
+# 8.bit and 16-bit:Big Endian
+# 32-bit: Little Endian (aka "wordswap")
+#
+# Hdr:
+reg_type, reg_number, reg_name, reg_desc, measurement_unit, data_type, data_length, unit_id, scaling_factor, reserved
+# column layout :
+#    reg_type (h=holding,i=input),
+#    address (decimal number, offset 1),
+#    name ( = column name in mysql-table "details", translated to lc, should be unique),
+#    description (optional, default = name ),
+#    unit:      "kWH","W","A" etc.
+#    data_type : U16 (unsigned short, default), U32 (unsigned int, word swap),
+#                S16 (signed short), S32 (signed integer, word swap), CHR (char),
+#    data_length: required for CHR otherwise derived from type
+#    mb_unit: modbus unit id , default 1, Sungrow: 1,2,200 is possible, depends on inverter port (WiNet-S or Inv-LAN-Port)
+#
+#   All entries will be sorted by reg_type and address. Therefore holding regs will be read before
+#   input regs.
+#   Registers are bulked up to 120 registers per read request.
+#
+#i,2507,serial_number,"Seriennummer",,CHR,5,1,1,
+#i,2515,device_type_code,"Inverter Typ",,U16,,1,1,
+#i,2516,device_name,"WR-Bezeichnung",,CHR,8,,1,
+#i,2582,arm_software_version,"ARM Software Version",,CHR,15,1,1,
+#i,2597,msdp_software_version,"MSDP Software Version",,CHR,15,1,1,
+#i,2612,sdsp_software_version,"SDSP Software Version",,CHR,15,1,1,
+#i,2627,sbrbcu_software_version,"SBRBCU Software Version",,CHR,15,1,1,
+#i,4950,protocol_number,"Protocol Number",,U32,,1,1,
+#i,4952,protocol_version,"Protocol Version",,U32,,1,1,
+#i,4954,arm_software_version,"ARM Software Version",,CHR,8,1,1,
+#i,4969,dsp_software_version,"DSP Software Version",,CHR,8,1,1,
+#i,4990,serial_number,"Seriennummer",,CHR,5,1,1,
+#i,5000,device_type_code,"Inverter Typ",,U16,,1,1,
+#i,5001,nominal_output_power,"Nominal output power",kW,U16,,1,0.1,
+#i,5002,output_type,"Netztyp",,U16,,1,1,
+# output_type = 1 = 3P4L, 0 = single phase, 2 - 3P3L (AU/NZ)
+i,5003,daily_output_energy,"This day PV generation and battery discharge",kWh,U16,,1,0.1,
+i,5004,total_output_energy,"Total PV generation and battery discharge",kWh,U32,,1,0.1,
+i,5008,inside_temperature,"Inside Temperature","deg C",S16,,1,0.1,
+i,5009,total_apparent_power,"Scheinleistung gesamt","VA",U32,,1,1,
+i,5011,mppt1_voltage,"MPPT1 Voltage","V",U16,,1,0.1,
+i,5012,mppt1_current,"MPPT1 Current","A",U16,,1,0.1,
+i,5013,mppt2_voltage,"MPPT2 Voltage","V",U16,,1,0.1,
+i,5014,mppt2_current,"MPPT2 Current","A",U16,,1,0.1,
+# 5015 / 5016 mppt3_ ...
+i,5017,total_PV_power,"PV Leistung gesamt",W,U32,,1,1,
+i,5019,phase_a_voltage,"Phase A Voltage Inverter","V",U16,,1,0.1,
+i,5020,phase_b_voltage,"Phase B Voltage Inverter","V",U16,,1,0.1,
+i,5021,phase_c_voltage,"Phase C Voltage Inverter","V",U16,,1,0.1,
+i,5031,total_DC_power,"DC Leistung PV + Batt.","W",S32,,1,1,
+i,5033,reactive_power,"Reactive power","var",S32,,1,1,
+i,5035,power_factor,"Power factor","",S16,,1,0.001,
+i,5036,grid_frequency,"Grid frequency","Hz",U16,,1,0.1,
+#i,5049,nominal_reactive_power,"Nominal reactive power","var",S32,,1,1,
+#i,5071,array_insulation_resistance,"Array insulation resistance","k-Ohm",U16,,1,1,
+# i,5114,present_country,"Country Information"
+# Code Country Country (English) Note
+# 0 GB Great Britain
+# 1 DE Germany
+# 2 FR France
+# 3 IT Italy
+# 4 ES Spain
+# 5 AT Austria
+# 6 AU Australia
+# 7 CZ Czech
+# 8 BE Belgium
+# 9 DK Denmark
+# 10 GR_L Greece Land
+# 11 GR_IS Greece Island
+# 12 NL Netherlands
+# 25 Vorarlberg (Austria) Vorarlberg District
+i,5601,meter_total_active_power,"Meter Active Power","W",S32,,1,1,
+# i,5603,meter_active_power_1,"Meter Active Power Phase 1","W",S32,,1,1,
+# i,5605,meter_active_power_2,"Meter Active Power Phase 2","W",S32,,1,1,
+# i,5607,meter_active_power_3,"Meter Active Power Phase 3","W",S32,,1,1,
+# i,5609,meter_daily_export_energy,"Meter Daily Export Energy","W",S16,,1,1,
+# i,5622,export_limit_min,"Export limit min","W",U16,,1,10,
+# i,5623,export_limit_max,"Export limit max","W",U16,,1,10,
+# i,5628,BDC_rated_power,"BDC rated power","kW",U16,,1,0.1,
+# i,5635,max_charging_current_BMS,"Max charging current (BMS)","A",U16,,1,1,
+# i,5636,max_discharging_current_BMS,"Max discharging current (BMS)","A",U16,,1,1,
+# current grid??
+# AC Seite Inverter Backup Ausgang
+# Strom L1,L2,L3=>5720,5721,5722
+# Leistung L1,L2,L3,Gesamt=>5723,5724,5725,5726
+# i,5741,phase_a_voltage_grid,"Phase A Voltage Grid","V",U16,,1,0.1,
+# i,5742,phase_b_voltage_grid,"Phase B Voltage Grid","V",U16,,1,0.1,
+# i,5743,phase_c_voltage_grid,"Phase C Voltage Grid","V",U16,,1,0.1,
+# i,5744,phase_a_current_grid,"Phase A Current Grid","A",U16,,1,0.01,
+# i,5745,phase_b_current_grid,"Phase B Current Grid","A",U16,,1,0.01,
+# i,5746,phase_c_current_grid,"Phase C Current Grid","A",U16,,1,0.01,
+i,5747,meter_total_import_energy,"Meter Total Import Energy","kWh",U32,,1,0.01
+i,5749,meter_total_export_energy,"Meter Total Export Energy","kWh",U32,,1,0.01
+############# periods - alles Mist
+#i,6100,actual_PV_power,"Actual PV power (power of today)","W",U16,1,1,1,
+#i,6196,this_day_PV_energy_yield,"This day PV energy yield","kWh",U16,1,1,0.1,
+#i,6227,this_month_PV_energy_yield,"This month PV energy yield","kWh",U16,1,1,0.1,
+#i,6250,this_year_PV_energy_yield,"This year PV energy yield","kWh",U32,2,1,0.1,
+############# periods
+#i,6290,actual_direct_power_consumption_from_PV,"Actual direct power consumption from PV","W",U16,1,1,1,
+#i,6386,this_day_direct_energy_consumption_from_PV,"This day direct energy consumation from PV","kWh",U16,1,1,0.1,
+#i,6417,this_month_direct_energy_consumption_from_PV,"This month direct energy consumation from PV","kWh",U16,1,1,0.1,
+#i,6429,this_year_direct_energy_consumption_from_PV,"This year direct energy consumation from PV","kWh",U32,2,1,0.1,
+############# periods
+#i,6469,actual_export_power_from_PV,"Actual export power from PV","W",U16,1,1,1,
+#i,6565,this_day_export_energy_from_PV,"This day export energy from PV","kWh",U16,1,1,0.1,
+#i,6596,this_month_export_energy_from_PV,"This month export energy from PV","kWh",U16,1,1,0.1,
+#i,6608,this_year_export_energy_from_PV,"This year export energy from PV","kWh",U32,2,1,0.1,
+############# periods
+#i,6648,actual_battery_charge_power,"Actual battery charge power from PV","W",U16,1,1,1,
+#i,6744,this_day_battery_charge_energy_from_PV,"This day battery charge energy from PV","kWh",U16,1,1,0.1,
+#i,6775,this_month_battery_charge_energy_from_PV,"This month battery charge energy from PV","kWh",U16,1,1,0.1,
+#i,6787,this_year_battery_charge_energy_from_PV,"This year battery charge energy from PV","kWh",U32,2,1,0.1,
+############# periods
+i,13000,system_state,"System State - see Appendix 1.1",,U16,,1,1,
+i,13001,running_state,"Running State - see Appendix 1.2",,U16,,1,1,
+i,13002,daily_PV_generation,"Daily PV Generation","kWh",U16,,1,0.1,
+i,13003,total_PV_generation,"Total PV Generation","kWh",U32,,1,0.1,
+i,13005,daily_export_energy_from_PV,"Daily export energy from PV","kWh",U16,,1,0.1,
+i,13006,total_export_energy_from_PV,"Total export energy from PV","kWh",U32,,1,0.1,
+i,13008,load_power,"Load Power","W",S32,,1,1,
+i,13010,export_power,"Export Power","W",S32,,1,1,
+i,13012,daily_battery_charge_energy_from_PV,"Total battery charge energy from PV","kWh",U16,,1,0.1,
+i,13013,total_battery_charge_energy_from_PV,"Total battery charge energy from PV","kWh",U32,,1,0.1,
+i,13015,co2_reduction,"CO2 reduction","kg",U32,,1,0.1,
+i,13017,daily_direct_energy_consumption_from_PV,"Daily direct energy consumption from PV","kWh",U16,,1,0.1,
+i,13018,total_direct_energy_consumption_from_PV,"Total direct energy consumption from PV","kWh",U32,,1,0.1,
+i,13020,battery_voltage,"Battery voltage","V",U16,,1,0.1,
+i,13021,battery_current,"Battery current","A",U16,,1,0.1,
+i,13022,battery_power,"Battery power","W",U16,,1,1,
+i,13023,battery_level,"Battery level","%",U16,,1,0.1,
+i,13024,battery_state_of_healthy,"Battery state of healthy","%",U16,,1,0.1,
+#i,13025,battery_temperature,"Battery temperature","%",S16,,1,0.1,
+i,13026,"daily_battery_discharge_energy","Daily battery discharge energy","Kwh",U16,,1,0.1,
+i,13027,"total_battery_discharge_energy","Total battery discharge energy","kWh",U32,,1,0.1,
+i,13029,"self_consumption_of_today","Self-consumption of today","%",U16,,1,0.1,
+i,13030,"grid_state","Grid state","",U16,,1,1,
+i,13031,phase_A_current,"Phase A current Inverter","A",U16,,1,0.1,
+i,13032,phase_B_current,"Phase B current Inverter","A",U16,,1,0.1,
+i,13033,phase_C_current,"Phase C current Inverter","A",U16,,1,0.1,
+i,13034,total_active_power,"Total active power","W",S32,,1,1,
+i,13036,daily_import_energy,"Daily import energy","kWh",U16,,1,0.1,
+i,13037,total_import_energy,"Total import energy","kWh",U32,,1,0.1,
+i,13039,battery_capacity,"battery capacity","kWh or Ah",U16,,1,0.1,
+i,13040,daily_charge_energy,"Daily charge energy","kWh",U16,,1,0.1,
+i,13041,total_charge_energy,"Total charge energy","kWh",U32,,1,0.1,
+i,13043,DRM_state,"DRM state","",U32,,1,1,
+i,13045,daily_export_energy,"Daily export energy","kWh",U16,,1,0.1,
+i,13046,total_export_energy,"Total export energy","kWh",U32,,1,0.1,
+i,13050,inverter_alarm,,1,U32,,1,1,
+i,13052,grid_side_fault,,1,U32,,1,1,
+i,13054,system_fault_1,,1,U32,,1,1,
+i,13056,system_fault_2,,1,U32,,1,1,
+i,13058,DC_side_fault,,1,U32,,1,1,
+i,13060,permanent_fault,,1,U32,,1,1,
+i,13062,BDC_side_fault,,1,U32,,1,1,
+i,13064,BDC_side_permanent_fault,,1,U32,,1,1,
+i,13066,battery_fault,,1,U32,,1,1,
+i,13068,battery_alarm,,1,U32,,1,1,
+i,13070,BMS_alarm,,1,U32,,1,1,
+i,13072,BMS_protection,,1,U32,,1,1,
+i,13074,BMS_fault_1,,1,U32,,1,1,
+i,13076,BMS_fault_2,,1,U32,,1,1,
+i,13078,BMS_alarm_2,,1,U32,,1,1,
+# -> not applicable for SHxxRT i,13100,BMS_status,,1,U16,,1,1,
+h,5000,system_clock_year,,1,U16,,1,1,
+h,5001,system_clock_month,,1,U16,,1,1,
+h,5002,system_clock_day,,1,U16,,1,1,
+h,5003,system_clock_hour,,1,U16,,1,1,
+h,5004,system_clock_minute,,1,U16,,1,1,
+h,5005,system_clock_second,,1,U16,,1,1,
+#h,5036,reactive_power_adjustment_mode,,1,U16,,1,1,
+#        - response: 0x55   value: "Off"
+#        - response: 0xA1   value: "Power factor setting"
+#        - response: 0xA2   value: "Reactive power percentage setting"
+#        - response: 0xA3   value: "Enable Q(P)"
+#        - response: 0xA4   value: "Enable Q(U)"
+# undocumented:
+#  h,13084,start_battery_charge,"Batterieladung ab Leistung",W,U16,,1,10
+#  h,13085,start_battery_discharge,"Batterieentladung ab Leistung",W,U16,,1,10
+#  h,30020,system_clock_year,,1,U16,,1,1,
+#  h,30021,system_clock_month,,1,U16,,1,1,
+#  h,30022,system_clock_day,,1,U16,,1,1,
+#  h,30023,system_clock_hour,,1,U16,,1,1,
+#  h,30024,system_clock_minute,,1,U16,,1,1,
+#  h,30025,system_clock_second,,1,U16,,1,1,
+#  h,33031,SOC_upper_limit,"","%",U16,,1,0.1
+#  h,33032,SOC_lower_limit,"","%",U16,,1,0.1
+#  h,33046,protection_value_of_battery_average_overvoltage,"","W",U16,,1,10
+#  h,33047,max_charging_power,"Maximale Ladeleistung","W",U16,,1,10
+#  h,33048,max_discharging_power,"Maximale Entladeleistung","W",U16,,1,10
+#  h,33049,battery_capacity,"Batterie Kapazität","kWh",U16,,1,0.01
+#
+#  h,31221,?,"enable/disable?",
+#  h,31222,?,"value: 2322",
+#  h,31223,?,"value: 996",
+#  h,31224,rated_power_other,"Rated Power of Original Power Generation Systems","kW",U16,,1,0.01
+#  h,31225,installed_pv_power,"Installed PV Power","kW",U16,,1,0.01
+#  h,31230,?,"enable/disable?",
+#  h,31231,?,"value: 2070",
+#  h,31232,?,"value: 2200",
+#  h,31233,?,"value: 2500",
+#  h,31234,?,"value: 2650",
+#  h,31235,?,"value: 1000",
+#  h,31236,?,"value: 1000",
+#  h,31237,?,"value: 1000",
+#  h,31238,?,"value: 200",
+#  h,31239,?,"value: 40",
+#
+#  h,34000,inverter_dhcp_state,"0x55=off,0xAA=on",,U16,,1,1
+#  h,34001-34004,inverter_ip 4xU16
+#  h,34005-34008,inverter_gw 4xU16
+#     etc. netmask, dns1, dns2 je 4xU16
+#
+#  h,36039 ff, user password "pw1111" = 28791,12593,12593,0,0,0,0
+#  h,36050 ff, admin password "pw8888" = 28791,14392,14392,0,0,0,0
+#              ändern sich nicht mit neuem pw???????  nur default???  oder mit 36038=xAA enable als Passwort Reset?
+#
+#           Global Scanning
+# h 30229 - Timing Scanning - xAA enable, x55 disable
+# h 30230 - Manual Scanning - xAA enable, x55 disable
+# h 30231 - Periodic Scanning - xAA enable, x55 disable
+# h 30232 - Scanning Period (Periodic Scanning) - minutes 1-720
+# h 30233 - Hour Timing Scanning
+# h 30234 - Minute Timing Scanning
+#
+# Bereich h 20000 - 20008 liefert einige Werte, Bedeutung absolut unklar
+#
+#  Sunspec Register >= H40001 - taugen nichts, unvollständig
+#  Ein Auszug:
+#  h,40001 ff: >>SunS___BSUNGROW_________________________Hybrid_Inverter_________________TOPAZ-H_________ARM_SAPPHIRE-H_VA21B1905234_____
+#  h,40100
+# 200-er
+#i,10741,battery_voltage,"Battery voltage (same as 13020)","V",U16,,200,0.1,
+#i,10742,battery_current,"Battery current (same as 13021)","V",U16,,200,0.1,
+i,10743,battery_temperature,"","C",S16,,200,0.1,
+i,10744,battery_level_abs,"absolute battery level","%",U16,,200,0.1,
+#i,10745,battery_state_of_healthy,"Battery state of healthy","%",U16,,200,0.1,
+#i,10746,total_battery_charge_energy_bms,"Total battery charge energy BMS","kWh",U32,,200,0.1,
+#i,10748,total_battery_discharge_energy_bms,"Total battery discharge energy BMS","kWh",U32,,200,0.1,
