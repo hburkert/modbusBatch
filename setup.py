@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='modbusBatch',
-      version='0.1.1',
+      version='0.1.2',
       description='ModbusTCP layer for batched modbus requests',
       long_description='ModbusTCP layer for batched modbus requests.',
       url='https://github.com/hburkert/modbusBatch.git',
