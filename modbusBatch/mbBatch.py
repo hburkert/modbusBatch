@@ -12,6 +12,7 @@ modbusBatch - batch modbus requests.
  _reg_JSON - Import json-File with modbus-register declarations - to be done
 
 """
+from __future__ import annotations
 import csv
 import time
 import dataclasses
