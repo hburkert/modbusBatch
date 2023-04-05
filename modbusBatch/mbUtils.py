@@ -14,6 +14,7 @@ modbusBatch helpers
 
     regs_to_str : byte buffer to null-terminated utf8-string
 """
+from __future__ import annotations
 from struct import unpack_from
 
 
