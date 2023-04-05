@@ -200,7 +200,7 @@ class MbBatch(object):
         which is the limit for TCP connections.
         """
         mbrequest = None
-        for i, reg in enumerate( self._mbregs ):
+        for i, reg in enumerate(self._mbregs ):
             if i == 0:
                 mbrequest = MbBatch.MbRequest( unit_id=reg.unit_id,
                                                address=reg.reg_number - self._reg_offset,
@@ -224,6 +224,13 @@ class MbBatch(object):
 
         self._mbrequests.append( mbrequest )
 
+    def log_me(self):
+        if self._client.last_error:
+            log.warning(f"modbus error {self._client.last_error} - {self._client.last_error_as_txt}")
+        if self._client.last_except:
+            log.warning([f"modbus exception {self._client.last_except} - {self._client.last_except_as_txt}],"
+                         f"{self._client.last_except_as_full_txt}"])
+
     def process_batches(self, close_socket: bool = True) -> bool:
         """
         Retrieve all registers from modbus server in one single composed request, convert modbus payload
@@ -234,7 +241,7 @@ class MbBatch(object):
             _retry -= 1
             self._client.open()
             if self._client.last_error or self._client.last_except:
-                print(self._client.last_error_as_txt, self._client.last_except_as_full_txt)
+                self.log_me()
                 continue
             rc = True
             for b in self._mbrequests:
@@ -246,7 +253,7 @@ class MbBatch(object):
                     raw_values = self._client.read_input_raw( reg_addr=b.address, reg_nb=b.quantity )
                 if raw_values is None:
                     log.warning(f"invalid modbus result for batch {b}  retry {_retry} " )
-                    print( self._client.last_error_as_txt, self._client.last_except_as_full_txt )
+                    self.log_me()
                     rc = False
                     break
                 for mbreg in self._mbregs[b.from_x:b.to_x + 1]:

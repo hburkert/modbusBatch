@@ -1,3 +1,5 @@
+# Package version
+VERSION = '0.1.5'
 """
     ModbusBatch: ModbusTCP layer for high-speed batched modbus requests.
     Reads register definitions from CSV-Input (YAML, JSON to be done).
@@ -29,7 +31,7 @@
     Synopsis:
         import time
         from modbusBatch.mbBatch import MbBatch
-        mb = MbBatch(host="localhost",
+        mb = MbBatch(host="modbushost",
              port=502,
              retry=3,
              reg_offset=1,
@@ -43,8 +45,6 @@
             print(mb._results)
             store(mb.result)
             check_end_of_loop() and exit(0)
-            times.sleep(some_time)
+            time.sleep(some_time)
         exit( 1 )
 """
-# Package version
-VERSION = '0.1.3'
