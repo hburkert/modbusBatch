@@ -4,10 +4,11 @@ ModbusTCP layer for high-speed batched modbus requests.
 * Reads register definitions from CSV-Input. 
 * Bulks modbus requests to bunches of up to 120 registers for optimized access 
 * Requests are handled in one transaction.
+* Supports access of different unit-ids in one batch.
 * Modbus raw-results will be converted to python data-types (integer, float, utf8-string).
 * Configurable retry mechanism
 * Little Endian double words aka "wordswap" is supported.
-* Reads holding and input registers, no coils, no writing.
+* Reads holding and input registers, no coils, no write.
 * An offset for register addressing may be given.
 
 
@@ -147,6 +148,6 @@ internal dataclasses (see below) and generates optimized modbus requests.
 - function ``process_batches(close_socket: bool = True)``\
 This polling function returns True on success, False on failure.\
 Parameter `close_socket=True` closes socket connection after processing the batch.
-`close_socket=False` leads to malfunction for Sungrow Inverters. Try it.
+`close_socket=False` leads to malfunction with Sungrow Inverters. Try it.
   
 
