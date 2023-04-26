@@ -31,7 +31,9 @@ mb = MbBatch(host="localhost",
              reg_wordswap=True,
              file_type="csv",
              file_path="./SungrowSHxxRT.csv",
-             debug=False)
+             debug=False,
+             csv_dlm=',',
+             batch_size=110)
 
 # endless application loop
 while mb.process_batches(close_socket=True):
@@ -96,7 +98,7 @@ Implements class MbBatch
 
 #### Class MbBatch
 ##### Constructor: 
-MbBatch(host="localhost", port=502, retry=3, reg_offset=0, reg_wordswap=True, file_type="csv", file_path="registers.csv") \
+MbBatch(host="localhost", port=502, retry=3, reg_offset=0, reg_wordswap=True, file_type="csv", file_path="registers.csv", csv_dlm=';', batch_size=110) \
 where:
 - host - name or address of modbus host
 - port - port number, usually 502
@@ -105,7 +107,9 @@ where:
 - reg_wordswap - True/False. True means U32/S32 register pairs are little endian encoded (Sungrow, SolaX, ...)
 - file_type - only "csv" is supported
 - file_path - file with register definitions 
-- debug - debug flag for modbusTcpRaw 
+- debug - debug flag for modbusTcpRaw
+- csv_dlm - defaults to ','
+- batch_size - maximum number of registers to batch, 60 - 120 
 
 Function `__init__` stores register specifications from csv-file in 
 internal dataclasses (see below) and generates optimized modbus requests.

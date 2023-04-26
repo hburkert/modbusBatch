@@ -2,13 +2,11 @@
 modbusBatch - batch modbus requests.
 
  Public Functions:
- process_batches - Retrieves all registers from modbus server in one single composed request. Used for polling.
-
+ process_batches - Retrieves all registers from modbus server in one single composed request.
+                   Intended use: Cyclic polling of (many) inverter modbus registers via TCP.
  Internal Functions:
  _reg_CSV - Import csv-file with modbus-register declarations
  _CSV_to_MbReg -  Verify and complete an imported csv array (one line) and convert to MbReg
- _reg_YML - Import yml-File with modbus-register declarations - to be done
- _reg_JSON - Import json-File with modbus-register declarations - to be done
 
 """
 from __future__ import annotations
@@ -50,23 +48,23 @@ class MbBatch(object):
             return self._field_decoder
 
         def __repr__(self) -> str:
-            return f'{self.reg_name}: {self.reg_type} {self.reg_number} {self.data_type}  {self.data_length} ' + \
+            return f'{self.reg_name}: {self.reg_type} {self.reg_number} {self.data_type} {self.data_length} ' + \
                    f'{self.scaling_factor} '
 
     @dataclasses.dataclass( frozen=False, eq=False, order=False )
     class MbRequest:
-        unit_id: int  # modbus unit
-        address: int  # modbus register address
+        unit_id: int   # modbus unit
+        address: int   # modbus register address
         quantity: int  # quantity of registers to read
-        from_x: int  # first corresponding register in list of MbRegs
-        to_x: int  # last corresponding register in list of MbRegs
+        from_x: int    # first corresponding register in list of MbRegs
+        to_x: int      # last corresponding register in list of MbRegs
         reg_type: str  # h = holding, i = input
 
     MbRequests = [MbRequest]
     MbRegs = [MbReg]
 
     def __init__(self, host="localhost", port=502, retry=3, reg_offset=0, reg_wordswap=True,
-                 file_type="csv", file_path="registers.csv", debug=False):
+                 file_type="csv", file_path="registers.csv", debug=False, csv_dlm=',', batch_size=100):
         # private
         self._host = host
         self._port = port
@@ -76,12 +74,14 @@ class MbBatch(object):
         self._file_type = file_type
         self._file_path = file_path
         self._csv_header = None
+        self._csv_dlm = csv_dlm
         # public, read only:
         self._mbregs: [MbBatch.MbReg] = list()
         self._mbrequests: [MbBatch.MbRequest] = list()
         self._results: dict = {}
         self._client = None
         self._debug = debug
+        self._batch_size = min(120, max(60, batch_size))
 
         """ setup ModbusTCP connection (raw version) """
         try:
@@ -122,7 +122,6 @@ class MbBatch(object):
         """
         def _CSV_to_MbReg(_csv_record: list) -> MbBatch.MbReg:
             """ Verify and complete an imported csv array (one line) and convert to MbReg """
-            MbBatch._helper = f">{_csv_record}<"
             d = dict( zip( self._csv_header, _csv_record ) )
             d['reg_number'] = int( d['reg_number'] )
             d['unit_id'] = int_with_default( d['unit_id'], 1 )
@@ -148,7 +147,7 @@ class MbBatch(object):
             d['data_type'] = d['data_type'].lower()
             d['data_length'] = int_with_default( d['data_length'], 1 )
             if d['data_type'] == 'chr' or d['data_type'] == 'str':
-                d['data_length'] = min(120, max( 1, d["data_length"] ))
+                d['data_length'] = min(self._batch_size, max( 1, d["data_length"] ))
                 d['_field_decoder'] = regs_to_str
             elif d['data_type'] == 'u32':
                 d['data_length'] = 2
@@ -166,33 +165,35 @@ class MbBatch(object):
             # make MbReg from dict:
             r = MbBatch.MbReg( **d )
             return r
-
-        def _filter(_csv_record) -> bool:
-            """
-             Lines starting with "#" will be treated as comments and ignored
-             First non-comment-line is csv-header which should contain following fields:
-             reg_type, reg_number, reg_name, reg_desc, measurement_unit, data_type, data_length, unit_id, scaling_factor
-            """
-            if _csv_record[0][0] == '#' or len(_csv_record) < 3:
-                return False
-            if self._csv_header is None:
-                self._csv_header = list(map(lambda x: x.strip(), _csv_record))
-                return False
-            return True
-
+        """
+        Import register defintions from csv
+        Lines starting with "#" will be treated as comments and ignored
+        First non-comment-line is csv-header which should contain following fields:
+        reg_type, reg_number, reg_name, reg_desc, measurement_unit, data_type, data_length, unit_id, scaling_factor
+        """
+        f = open(self._file_path, newline='')
+        unsorted = []
+        reader = csv.reader( f , delimiter=self._csv_dlm)
         try:
-            f = open(self._file_path)
-            self._mbregs = sorted( list( map( _CSV_to_MbReg, filter( _filter, csv.reader( f ) ) ) ),
-                                   key=lambda a: '%3.3i %s1.1 %5.5i' % (a.unit_id, a.reg_type, a.reg_number) )
-        except BaseException as e:
-            log.error(f"Murks in {__name__}, : {e}" )
-            exit(12)
+            for row in reader :
+                """
+                """
+                if len(row) > 3 and row[0][0] != '#' and len( row ) > 2:
+                    if self._csv_header is None:
+                        self._csv_header = list( map( lambda x: x.strip(), row ) )
+                    else:
+                        unsorted.append(_CSV_to_MbReg(row))
+        except Exception as e:
+            log.warning(f"csv error {e} in line {reader.line_num}")
+
+        self._mbregs = sorted(unsorted,
+                              key=lambda a: '%3.3i %s1.1 %5.5i' % (a.unit_id, a.reg_type, a.reg_number) )
 
     def _build_batches(self):
         """
         Make batches up to 120 registers for modbus access.
         Reading single registers via modbusTCP is possible but inefficient,
-        therefore we define reasonable blocks of registers with a max size of 120,
+        Therefore we define reasonable blocks of registers with a max size of 120,
         which is the limit for TCP connections.
         """
         mbrequest = None
@@ -204,7 +205,7 @@ class MbBatch(object):
                                                from_x=i,
                                                to_x=i,
                                                reg_type=reg.reg_type )
-            elif reg.data_length + reg.reg_number - self._reg_offset - mbrequest.address > 120 or \
+            elif reg.data_length + reg.reg_number - self._reg_offset - mbrequest.address > self._batch_size or \
                     mbrequest.reg_type != reg.reg_type or \
                     mbrequest.unit_id != reg.unit_id:
                 self._mbrequests.append( mbrequest )
