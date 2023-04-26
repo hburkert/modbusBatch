@@ -1,0 +1,4 @@
+
+V 0.1.6 - Parameter "csv_dlm" and "batch_size" added
+
+V 0.1.5 - first stable version
