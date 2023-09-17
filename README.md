@@ -70,7 +70,7 @@ i,10743,battery_temperature,"","C",S16,,200,0.1,
 i,10744,battery_level_abs,"absolute battery level","%",U16,,200,0.1,
 ````
 
-Order of rows is arbitrary. Internally they will be sorted by `unit_id`, `data_type` and `reg_number`. \
+Order of rows is arbitrary. Internally they will be sorted by `unit_id`, `reg_type` and `reg_number`. \
 ``reg_type`` must be first column, order of other columns is arbitrary.
 Columns `reg_type` `reg_number` `reg_name` are always required. Other columns have defaults.\
 `data_len` should be given for `data_type` 'str' or 'chr'. Length is expressed in number of registers. Length = 5 results in a string of 10 bytes.
