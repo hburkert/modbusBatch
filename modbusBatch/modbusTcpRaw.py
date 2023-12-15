@@ -8,6 +8,7 @@ from pyModbusTCP.client import ModbusClient
 from pyModbusTCP.constants import READ_INPUT_REGISTERS, READ_HOLDING_REGISTERS, MB_RECV_ERR
 
 
+
 class ModbusTcpRaw( ModbusClient ):
     def read_holding_raw(self, reg_addr, reg_nb=1):
         """Modbus function READ_HOLDING_REGISTERS (0x03).

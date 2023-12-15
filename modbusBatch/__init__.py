@@ -41,8 +41,8 @@ VERSION = '0.1.6'
 
         # endless application loop
         while mb.process_batches(close_socket=True):
-            do_some_thing_with(mb._results)
-            print(mb._results)
+            do_some_thing_with(mb.results)
+            print(mb.results)
             store(mb.result)
             check_end_of_loop() and exit(0)
             time.sleep(some_time)
