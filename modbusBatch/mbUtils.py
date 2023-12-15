@@ -54,7 +54,7 @@ def s32le(buf: bytes, f, r) -> int:
 
 def regs_to_str(*args) -> str:
     """ byte buffer to null-terminated utf8-string """
-    buf: bytes = args[0]
+    buf: bytes = args[0] + b'\000'
     return buf[:buf.find(0)].decode( 'UTF8' )
 
 
