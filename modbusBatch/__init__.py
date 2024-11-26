@@ -1,5 +1,5 @@
 # Package version
-VERSION = '0.1.6'
+VERSION = '0.1.7'
 """
     ModbusBatch: ModbusTCP layer for high-speed batched modbus requests.
     Reads register definitions from CSV-Input (YAML, JSON to be done).
@@ -9,7 +9,7 @@ VERSION = '0.1.6'
 
     Some features:
     - configurable retry mechanism
-    - supports little endian double words (aka wordswap)
+    - supports little endian double and quadruple words (aka wordswap)
     - read holding and input registers - no coils
     - register addressing with configurable offset
 
