@@ -1,3 +1,5 @@
+V 0.1.7 - removed invalid debug parameter when instancing ModbusTcpRaw
+          added s64, u64 encoding in mbUtils  
 
 V 0.1.6 - Parameter "csv_dlm" and "batch_size" added
 

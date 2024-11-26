@@ -89,8 +89,7 @@ class MbBatch(object):
                                          port=self._port,
                                          unit_id=0,
                                          auto_open=False,
-                                         auto_close=False,
-                                         debug=self._debug)
+                                         auto_close=False)
         except Exception as e:
             log.error( "Error with host or port params", e )
             exit( 13 )
