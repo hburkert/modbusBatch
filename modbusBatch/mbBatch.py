@@ -13,7 +13,7 @@ from __future__ import annotations
 import csv
 import time
 import dataclasses
-from modbusBatch.mbUtils import int_with_default, float_with_default, u16, u32be, u32le, s16, s32be, s32le, regs_to_str
+from modbusBatch.mbUtils import int_with_default, float_with_default, u16, u32be, u32le, s16, s32be, s32le, u64be, s64be, u64le, s64le, regs_to_str
 from modbusBatch.modbusTcpRaw import ModbusTcpRaw
 import logging
 log = logging.getLogger(__name__)
@@ -148,6 +148,12 @@ class MbBatch(object):
             if d['data_type'] == 'chr' or d['data_type'] == 'str':
                 d['data_length'] = min(self._batch_size, max( 1, d["data_length"] ))
                 d['_field_decoder'] = regs_to_str
+            elif d['data_type'] == 'u64':
+                d['data_length'] = 4
+                d['_field_decoder'] = u64le if self._reg_wordswap else u64be
+            elif d['data_type'] == 's64':
+                d['data_length'] = 4
+                d['_field_decoder'] = s64le if self._reg_wordswap else s64be
             elif d['data_type'] == 'u32':
                 d['data_length'] = 2
                 d['_field_decoder'] = u32le if self._reg_wordswap else u32be
@@ -157,7 +163,7 @@ class MbBatch(object):
             elif d['data_type'] == 's16':
                 d['data_length'] = 1
                 d['_field_decoder'] = s16
-            else:
+            else:   
                 d['data_type'] = 'u16'
                 d['data_length'] = 1
                 d['_field_decoder'] = u16

@@ -1,5 +1,5 @@
 # Package version
-VERSION = '0.1.7'
+VERSION = '0.1.8'
 """
     ModbusBatch: ModbusTCP layer for high-speed batched modbus requests.
     Reads register definitions from CSV-Input (YAML, JSON to be done).
